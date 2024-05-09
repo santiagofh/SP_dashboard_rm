@@ -1,5 +1,5 @@
 #%% 
-# LIBRERIAS
+# Librerias a importar
 
 import streamlit as st
 import pandas as pd
@@ -14,14 +14,18 @@ from datetime import datetime
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
+import locale
+#%%
+# Setting o configuración
+
+locale.setlocale(locale.LC_ALL, 'es_CL')
 
 #%% 
-# RUTAS DE ARCHIVOS
-
+# Path o rutas para archivos
 path_censo17 = 'data_clean/CENSO17_Poblacion_rm.csv'
-#https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda
+# https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda
 path_geo='data_clean/Comunas_RM.geojson'
-#
+# https://www.ine.gob.cl/herramientas/portal-de-mapas/geodatos-abiertos
 path_ine_proy='data_clean/INE_Proyecciones_RM.csv'
 # https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion   
 
@@ -31,6 +35,12 @@ path_ine_proy='data_clean/INE_Proyecciones_RM.csv'
 ine17=pd.read_csv(path_ine_proy)
 censo17 = pd.read_csv(path_censo17)
 gdf = gpd.read_file(path_geo)
+# casen22_pobreza_m = pd.read_csv(path_casen22_pobreza_m)
+# casen22_ingresos = pd.read_csv(path_casen22_ingresos)
+# casen22_participacion_lab = pd.read_csv(path_casen22_participacion_lab)
+# casen22_migrantes = pd.read_csv(path_casen22_migrantes)
+# casen22_etnias = pd.read_csv(path_casen22_etnias)
+# casen22_prevision = pd.read_csv(path_casen22_prevision)
 #%%
 # Listado comunas
 
@@ -90,7 +100,7 @@ censo17_comuna=censo17.loc[censo17['NOMBRE COMUNA']==str.upper(comuna_selecciona
 
 #%% 
 # Calculo de pop y densidad
-pop_total_comuna=ine17_comuna['Poblacion 2023'].sum()
+pop_total_comuna=ine17_comuna['Poblacion 2024'].sum()
 area_comuna=1
 densidad_pop=pop_total_comuna/area_comuna
 
@@ -108,8 +118,9 @@ censo17_comuna_edad = censo17_comuna.loc[censo17_comuna.EDAD != 'Total Comuna']
 pop_censada = censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA']
 pop_h = censo17_comuna_pop['HOMBRES ']
 pop_m = censo17_comuna_pop['MUJERES']
-pop_urb = censo17_comuna_pop['TOTAL ÁREA URBANA']
-pop_rur = censo17_comuna_pop['TOTAL ÁREA RURAL']
+pop_urb_percentage = (censo17_comuna_pop['TOTAL ÁREA URBANA'] / censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA'] * 100).iloc[0]
+pop_rur_percentage = (censo17_comuna_pop['TOTAL ÁREA RURAL'] / censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA'] * 100).iloc[0]
+
 
 # Projected data for 2024
 pop_total_comuna = ine17_comuna['Poblacion 2024'].sum()
@@ -125,15 +136,16 @@ gender_population['Formatted_Percentage'] = gender_population['Percentage'].appl
 fig = px.pie(gender_population, values='Percentage', names='Sexo (1=Hombre 2=Mujer)',
              title="Distribución de Género 2024")
 
+
 # Format numbers with thousand separators
-formatted_pop_censada = "{:,}".format(int(pop_censada))
-formatted_pop_h = "{:,}".format(int(pop_h))
-formatted_pop_m = "{:,}".format(int(pop_m))
-formatted_pop_urb = "{:,}".format(int(pop_urb))
-formatted_pop_rur = "{:,}".format(int(pop_rur))
-formatted_pop_total_comuna = "{:,}".format(int(pop_total_comuna))
-formatted_pop_proy_h = "{:,}".format(int(pop_proy_h))
-formatted_pop_proy_m = "{:,}".format(int(pop_proy_m))
+formatted_pop_censada = locale.format_string("%d", int(pop_censada), grouping=True)
+formatted_pop_h = locale.format_string("%d", int(pop_h), grouping=True)
+formatted_pop_m = locale.format_string("%d", int(pop_m), grouping=True)
+formatted_pop_urb = "{:.2f}%".format(pop_urb_percentage)
+formatted_pop_rur = "{:.2f}%".format(pop_rur_percentage)
+formatted_pop_total_comuna = locale.format_string("%d", int(pop_total_comuna), grouping=True)
+formatted_pop_proy_h = locale.format_string("%d", int(pop_proy_h), grouping=True)
+formatted_pop_proy_m = locale.format_string("%d", int(pop_proy_m), grouping=True)
 
 # Display in Streamlit
 st.markdown('# Indicadores Censo 2017 y proyecciones')
@@ -142,8 +154,8 @@ cols = st.columns(5)
 cols[0].metric("Población efectivamente censada 2017", formatted_pop_censada)
 cols[1].metric("Total hombres (censo 2017)", formatted_pop_h)
 cols[2].metric("Total mujeres (censo 2017)", formatted_pop_m)
-cols[3].metric("Total área urbana (censo 2017)", formatted_pop_urb)
-cols[4].metric("Total área rural (censo 2017)", formatted_pop_rur)
+cols[3].metric("Porcentaje área urbana (censo 2017)", formatted_pop_urb)
+cols[4].metric("Porcentaje área rural (censo 2017)", formatted_pop_rur)
 
 cols[0].metric("Población proyectada de la comuna 2024", formatted_pop_total_comuna)
 cols[1].metric("Total hombres (población proyectada 2024)", formatted_pop_proy_h)
@@ -188,8 +200,8 @@ else:
     st.write("No se encontró la comuna seleccionada en los datos geográficos.")
 area_comuna=gdf_comuna.Superf_KM2
 densidad_pop=pop_total_comuna/area_comuna
-formatted_area_comuna="{:,}".format(int(area_comuna))
-formatted_densidad_pop="{:,}".format(int(densidad_pop))
+formatted_area_comuna=locale.format_string("%d", int(area_comuna), grouping=True)
+formatted_densidad_pop=locale.format_string("%.2f", densidad_pop, grouping=True)
 # Assuming area_comuna and densidad_pop variables are defined somewhere in your code
 cols = st.columns(5)
 cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{formatted_area_comuna} km²")
@@ -321,5 +333,21 @@ fig.update_layout(
 st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
-#%%
-# Socioecomonicos
+# #%%
+# st.write("## Indicadores Socioeconómicos: Pobreza")
+# st.write(f"### Pobreza Multidimensional en {comuna_seleccionada}")
+# comuna_poverty_data = casen22_pobreza_m[casen22_pobreza_m['Comuna'] == comuna_seleccionada]
+# st.write("Porcentaje de población bajo la línea de pobreza multidimensional:")
+# st.write(f"Pobres: {comuna_poverty_data.iloc[0]['Pobres']:.2f}%")
+# st.write(f"No pobres: {comuna_poverty_data.iloc[0]['No pobres']:.2f}%")
+# # Create data for the pie chart
+# pie_data = {
+#     'Category': ['Pobres', 'No pobres'],
+#     'Values': [comuna_poverty_data.iloc[0]['Pobres'], comuna_poverty_data.iloc[0]['No pobres']]
+# }
+# df_pie = pd.DataFrame(pie_data)
+
+# # Pie chart visualization
+# fig = px.pie(df_pie, values='Values', names='Category',
+#                 title=f"Distribución de Pobreza Multidimencional en {comuna_seleccionada}")
+# st.plotly_chart(fig)

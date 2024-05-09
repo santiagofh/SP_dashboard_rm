@@ -1,10 +1,9 @@
 streamlit
 pandas
-numpy
 plotly
+numpy
+geopandas
 matplotlib
 folium
-pydeck
-openpyxl
-geopandas
-streamlit_folium
+streamlit-folium
+plotly-express
