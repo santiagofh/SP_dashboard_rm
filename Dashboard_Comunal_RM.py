@@ -11,13 +11,16 @@ import folium
 from streamlit_folium import folium_static
 import plotly.express as px
 from datetime import datetime
+import pandas as pd
+import plotly.graph_objects as go
+from plotly.subplots import make_subplots
 
 #%% 
 # RUTAS DE ARCHIVOS
 
 path_censo17 = 'data_clean/CENSO17_Poblacion_rm.csv'
 #https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda
-path_geo='data_clean/Poligonos_comunas_RM.geojson'
+path_geo='data_clean/Comunas_RM.geojson'
 #
 path_ine_proy='data_clean/INE_Proyecciones_RM.csv'
 # https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion   
@@ -60,12 +63,12 @@ opcion = st.sidebar.radio(
 # TITULO INTRODUCCION
 
 st.markdown('# Región Metropolitana y sus comunas: Indicadores priorizados')
-col1, col2 = st.columns([1, 3])
-with col1:
-    logo_url = "https://upload.wikimedia.org/wikipedia/commons/6/6e/SEREMISALUDMET.png"
-    st.image(logo_url) 
-with col2:
-    st.write("""
+# col1, col2 = st.columns([1, 3])
+# with col1:
+logo_url = "https://upload.wikimedia.org/wikipedia/commons/6/6e/SEREMISALUDMET.png"
+st.image(logo_url, width=200) 
+# with col2:
+st.write("""
     ### Bienvenido al Tablero Interactivo de Comunas
 
     Este tablero está diseñado para proporcionar una visión integral y detallada de los diversos indicadores socioeconómicos, demográficos y urbanos de las comunas que forman la Región Metropolitana de Santiago. Aquí podrás explorar y visualizar datos que abarcan desde distribuciones de población y niveles de ingresos hasta aspectos de salud y educación.
@@ -77,20 +80,11 @@ with col2:
     - **Selecciona una comuna:** Utiliza el menú desplegable para elegir una comuna y automáticamente se actualizarán los gráficos y tablas para reflejar los datos correspondientes.
     - **Explora los gráficos:** Interactúa con los gráficos para obtener detalles específicos sobre diferentes indicadores.
     - **Comparación y análisis:** Compara datos entre diferentes comunas ajustando tu selección y analiza las tendencias y patrones que emergen de los datos.
-
-    ### Objetivos del tablero
-
-    - **Informar:** Proporcionar datos actualizados y precisos sobre las comunas.
-    - **Analizar:** Facilitar el análisis comparativo entre comunas.
-    - **Impulsar decisiones:** Ayudar a tomadores de decisiones y ciudadanos a entender las dinámicas comunitarias para una planificación y desarrollo mejor informado.
-
-    Esperamos que este tablero sea una herramienta útil para todos los interesados en el desarrollo urbano y social de la Región Metropolitana de Santiago. ¡Explora, descubre e interactúa!
-
     """)
 
 # %%
 # Filtro de comuna seleccionada
-gdf_comuna=gdf_comuna = gdf[gdf['Comuna'] == comuna_seleccionada]
+gdf_comuna=gdf_comuna = gdf[gdf['NOM_COMUNA'] == str.upper(comuna_seleccionada)]
 ine17_comuna=ine17.loc[ine17['Nombre Comuna']==comuna_seleccionada]
 censo17_comuna=censo17.loc[censo17['NOMBRE COMUNA']==str.upper(comuna_seleccionada)]
 
@@ -101,29 +95,108 @@ area_comuna=1
 densidad_pop=pop_total_comuna/area_comuna
 
 # %%
-# Indicadores territoriales
-st.markdown(f'# Indicadores territoriales')
-col1, col2, col3 = st.columns([1, 1, 1])
-col1.metric("Población proyectada de la comuna 2024", pop_total_comuna)
-col2.metric("Area total de la comuna", area_comuna)
-col3.metric("Densidad poblacional de la comuna", densidad_pop)
-st.write('_Fuente: Elaboración propia a partir de INE 2017_')
+# 
+# Load and prepare data
+current_year = datetime.now().year
+year_column = f'Poblacion {current_year}'
 
+# Assuming censo17_comuna and ine17_comuna are already loaded with appropriate data
+censo17_comuna_pop = censo17_comuna.loc[censo17_comuna.EDAD == 'Total Comuna']
+censo17_comuna_edad = censo17_comuna.loc[censo17_comuna.EDAD != 'Total Comuna']
+
+# Census data
+pop_censada = censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA']
+pop_h = censo17_comuna_pop['HOMBRES ']
+pop_m = censo17_comuna_pop['MUJERES']
+pop_urb = censo17_comuna_pop['TOTAL ÁREA URBANA']
+pop_rur = censo17_comuna_pop['TOTAL ÁREA RURAL']
+
+# Projected data for 2024
+pop_total_comuna = ine17_comuna['Poblacion 2024'].sum()
+pop_proy_h = ine17_comuna.loc[ine17_comuna['Sexo (1=Hombre 2=Mujer)'] == 1, 'Poblacion 2023'].sum()
+pop_proy_m = ine17_comuna.loc[ine17_comuna['Sexo (1=Hombre 2=Mujer)'] == 2, 'Poblacion 2023'].sum()
+
+# Current year gender distribution
+pop_current_year = ine17_comuna[['Sexo (1=Hombre 2=Mujer)', year_column]].dropna()
+gender_population = pop_current_year.groupby('Sexo (1=Hombre 2=Mujer)')[year_column].sum().reset_index()
+total_population = gender_population[year_column].sum()
+gender_population['Percentage'] = (gender_population[year_column] / total_population) * 100
+gender_population['Formatted_Percentage'] = gender_population['Percentage'].apply(lambda x: "{:.2f}%".format(x))
+fig = px.pie(gender_population, values='Percentage', names='Sexo (1=Hombre 2=Mujer)',
+             title="Distribución de Género 2024")
+
+# Format numbers with thousand separators
+formatted_pop_censada = "{:,}".format(int(pop_censada))
+formatted_pop_h = "{:,}".format(int(pop_h))
+formatted_pop_m = "{:,}".format(int(pop_m))
+formatted_pop_urb = "{:,}".format(int(pop_urb))
+formatted_pop_rur = "{:,}".format(int(pop_rur))
+formatted_pop_total_comuna = "{:,}".format(int(pop_total_comuna))
+formatted_pop_proy_h = "{:,}".format(int(pop_proy_h))
+formatted_pop_proy_m = "{:,}".format(int(pop_proy_m))
+
+# Display in Streamlit
+st.markdown('# Indicadores Censo 2017 y proyecciones')
+cols = st.columns(5)
+
+cols[0].metric("Población efectivamente censada 2017", formatted_pop_censada)
+cols[1].metric("Total hombres (censo 2017)", formatted_pop_h)
+cols[2].metric("Total mujeres (censo 2017)", formatted_pop_m)
+cols[3].metric("Total área urbana (censo 2017)", formatted_pop_urb)
+cols[4].metric("Total área rural (censo 2017)", formatted_pop_rur)
+
+cols[0].metric("Población proyectada de la comuna 2024", formatted_pop_total_comuna)
+cols[1].metric("Total hombres (población proyectada 2024)", formatted_pop_proy_h)
+cols[2].metric("Total mujeres (población proyectada 2024)", formatted_pop_proy_m)
+
+cols[3].metric(label="Porcentaje de hombres (proyectado para 2024)", 
+               value=gender_population.loc[gender_population['Sexo (1=Hombre 2=Mujer)'] == 1, 'Formatted_Percentage'].iloc[0])
+cols[4].metric(label="Porcentaje de mujeres (proyectado para 2024)", 
+               value=gender_population.loc[gender_population['Sexo (1=Hombre 2=Mujer)'] == 2, 'Formatted_Percentage'].iloc[0])
+
+
+st.write('_Fuente: Elaboración propia a partir de INE 2017_')
+st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
 #%%
 # Mapa de la comuna
-st.write((f"## Visualizar mapa de la comuna {comuna_seleccionada}"))
+def get_zoom_level(area):
+    # Convert area from square degrees to a more sensible unit if necessary
+    # Example thresholds; adjust based on the specific scale of your data and area unit
+    scaled_area = area * 1000  # Assuming 'area' needs scaling to match these thresholds
+    if scaled_area > 50:
+        return 10
+    elif scaled_area > 20:
+        return 11
+    elif scaled_area > 10:
+        return 11
+    elif scaled_area > 5:
+        return 12
+    else:
+        return 13
+st.write(f"## Visualizar mapa de la comuna {comuna_seleccionada}")
+
 if not gdf_comuna.empty:
+    area = gdf_comuna.geometry.area.iloc[0]  # Get the area of the comuna
     centroid = gdf_comuna.geometry.centroid.iloc[0]
-    m = folium.Map(location=[centroid.y, centroid.x], zoom_start=12)
-    folium.GeoJson(
-        gdf_comuna,
-        name='geojson'
-    ).add_to(m)
+    zoom_start = get_zoom_level(area)  # Dynamic zoom level based on area
+    m = folium.Map(location=[centroid.y, centroid.x], zoom_start=zoom_start)
+    st.write(area*1000)
+    folium.GeoJson(gdf_comuna, name='geojson').add_to(m)
     folium.LayerControl().add_to(m)
     folium_static(m)
 else:
     st.write("No se encontró la comuna seleccionada en los datos geográficos.")
-st.write('_Fuente: Elaboración propia a partir de datos geograficos nacionales_')
+area_comuna=gdf_comuna.Superf_KM2
+densidad_pop=pop_total_comuna/area_comuna
+formatted_area_comuna="{:,}".format(int(area_comuna))
+formatted_densidad_pop="{:,}".format(int(densidad_pop))
+# Assuming area_comuna and densidad_pop variables are defined somewhere in your code
+cols = st.columns(5)
+cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{formatted_area_comuna} km²")
+cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{formatted_densidad_pop} hab/km²")
+
+
+st.write('_Fuente: Elaboración propia a partir de datos geograficos nacionales (https://www.ine.gob.cl/herramientas/portal-de-mapas/geodatos-abiertos)_')
 #%%
 # Población proyectada
 st.write('## Poblacion proyectada')
@@ -164,74 +237,89 @@ fig.update_layout(
 st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
-#%%
-st.markdown(f'# Indicadores Censo 2017')
-censo17_comuna_pop=censo17_comuna.loc[censo17_comuna.EDAD=='Total Comuna']
-censo17_comuna_edad=censo17_comuna.loc[censo17_comuna.EDAD!='Total Comuna']
-pop_censada=censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA']
-pop_h=censo17_comuna_pop['HOMBRES ']
-pop_m=censo17_comuna_pop['MUJERES']
-pop_urb=censo17_comuna_pop['TOTAL ÁREA URBANA']
-pop_rur=censo17_comuna_pop['TOTAL ÁREA RURAL']
-col1, col2, col3, col4, col5 = st.columns([1,1,1,1,1])
-col1.metric("Población efectivamente censada 2017", pop_censada)
-col2.metric("Total hombres", pop_h)
-col3.metric("Total mujeres", pop_m)
-col4.metric("Total área urbana", pop_urb)
-col5.metric("Total área rural", pop_rur)
-st.write('_Fuente: Elaboración propia a partir de CENSO 2017_ _(https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda)_')
 # %%
-st.markdown(f'# Piramide poblacional')
-import pandas as pd
-import plotly.graph_objects as go
+st.write(f'## Piramide poblacional para {comuna_seleccionada}')
+ine17_comuna['Sexo'] = ine17_comuna['Sexo (1=Hombre 2=Mujer)'].map({1: 'Hombres', 2: 'Mujeres'})
+years = [f'Poblacion {year}' for year in range(2002, 2036)]
+data_melted = ine17_comuna.melt(id_vars=['Edad', 'Sexo'], value_vars=years, var_name='Year', value_name='Population')
+data_melted['Year'] = data_melted['Year'].str.extract('(\d+)').astype(int)
+grouped_data = data_melted.groupby(['Year', 'Sexo', 'Edad']).agg({'Population': 'sum'}).reset_index()
+def age_group(age):
+    if age >= 80:
+        return "80 y más"
+    elif age >= 75:
+        return "75 a 79"
+    elif age >= 70:
+        return "70 a 74"
+    elif age >= 65:
+        return "65 a 69"
+    elif age >= 60:
+        return "60 a 64"
+    elif age >= 55:
+        return "55 a 59"
+    elif age >= 50:
+        return "50 a 54"
+    elif age >= 45:
+        return "45 a 49"
+    elif age >= 40:
+        return "40 a 44"
+    elif age >= 35:
+        return "35 a 39"
+    elif age >= 30:
+        return "30 a 34"
+    elif age >= 25:
+        return "25 a 29"
+    elif age >= 20:
+        return "20 a 24"
+    elif age >= 15:
+        return "15 a 19"
+    elif age >= 10:
+        return "10 a 14"
+    elif age >= 5:
+        return "5 a 9"
+    else:
+        return "0 a 4"
+grouped_data['Age Group'] = grouped_data['Edad'].apply(age_group)
+grouped_data = grouped_data.groupby(['Year', 'Sexo', 'Age Group']).agg({'Population': 'sum'}).reset_index()
+fig = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=['Hombres', 'Mujeres'],
+                    horizontal_spacing=0.02, x_title='Población')
+for year in range(2002, 2036):
+    for sexo in ['Hombres', 'Mujeres']:
+        subset = grouped_data[(grouped_data['Year'] == year) & (grouped_data['Sexo'] == sexo)]
+        subset = subset.sort_values(by='Age Group')
+        fig.add_trace(
+            go.Bar(x=-subset['Population'] if sexo == 'Hombres' else subset['Population'], y=subset['Age Group'],
+                   orientation='h', name=sexo, visible=(year == datetime.now().year)),
+            1, 1 if sexo == 'Hombres' else 2
+        )
+current_year = datetime.now().year
+steps = []
+for i, year in enumerate(range(2002, 2036)):
+    step = dict(
+        method="update",
+        args=[{"visible": [False] * len(fig.data)}],
+        label=str(year)
+    )
+    for j in range(len(fig.data)):
+        step["args"][0]["visible"][2 * i + j % 2] = True
+    steps.append(step)
+current_year_index = current_year - 2002
 
-# Suponiendo que censo17_comuna_edad ya está cargado como DataFrame
-# Corregir el nombre de la columna "HOMBRE " a "HOMBRE"
-censo17_comuna_edad.rename(columns={'HOMBRES ': 'HOMBRES'}, inplace=True)
-
-# Eliminar columnas innecesarias si es necesario
-columns_to_keep = ['EDAD', 'HOMBRES', 'MUJERES']
-censo17_comuna_edad = censo17_comuna_edad[columns_to_keep]
-
-# Convertir la columna de edad para manejar "100 o más" como un solo grupo
-censo17_comuna_edad['EDAD'] = censo17_comuna_edad['EDAD'].replace('100 o más', '100+')
-
-# Preparar los datos para la pirámide poblacional
-censo17_comuna_edad.sort_values('EDAD', inplace=True)  # Asegurarse de que las edades están en orden ascendente
-
-# Crear el gráfico
-fig = go.Figure()
-
-# Añadir la serie de datos para hombres
-fig.add_trace(go.Bar(
-    y=censo17_comuna_edad['EDAD'],
-    x=-censo17_comuna_edad['HOMBRES'],  # Negativo para que apunte hacia la izquierda
-    name='Hombres',
-    orientation='h',
-    marker=dict(color='blue')
-))
-
-# Añadir la serie de datos para mujeres
-fig.add_trace(go.Bar(
-    y=censo17_comuna_edad['EDAD'],
-    x=censo17_comuna_edad['MUJERES'],
-    name='Mujeres',
-    orientation='h',
-    marker=dict(color='red')
-))
-
-# Actualizar el layout del gráfico
+sliders = [dict(
+    active=current_year_index,
+    currentvalue={"prefix": "Año: "},
+    pad={"t": 50},
+    steps=steps
+)]
 fig.update_layout(
-    title=f'Pirámide Poblacional de {comuna_seleccionada}',
-    xaxis_title='Número de personas',
-    yaxis_title='Edad',
-    barmode='relative',
-    bargap=0.1,  # Espacio entre las barras del gráfico
-    bargroupgap=0.1  # Espacio entre grupos de barras
+    sliders=sliders,
+    title=f"Pirámide Poblacional de {comuna_seleccionada} por Año",
+    xaxis_title="Población",
+    yaxis_title="Rango Etario",
+    showlegend=False
 )
-
-# Mostrar el gráfico
-st.write(fig)
-
-
-# %%
+st.plotly_chart(fig)
+st.write('_Fuente: Elaboración propia a partir de INE 2017_')
+st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
+#%%
+# Socioecomonicos
