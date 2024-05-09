@@ -6,3 +6,5 @@ matplotlib
 folium
 pydeck
 openpyxl
+geopandas
+streamlit_folium
