@@ -18,7 +18,7 @@ import locale
 #%%
 # Setting o configuración
 
-locale.setlocale(locale.LC_ALL, 'es_CL')
+locale.setlocale(locale.LC_ALL, 'es_ES')
 
 #%% 
 # Path o rutas para archivos
