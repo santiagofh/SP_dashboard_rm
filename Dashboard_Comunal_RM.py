@@ -172,9 +172,7 @@ st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/pro
 #%%
 # Mapa de la comuna
 def get_zoom_level(area):
-    # Convert area from square degrees to a more sensible unit if necessary
-    # Example thresholds; adjust based on the specific scale of your data and area unit
-    scaled_area = area * 1000  # Assuming 'area' needs scaling to match these thresholds
+    scaled_area = area * 1000 
     if scaled_area > 50:
         return 10
     elif scaled_area > 20:
@@ -192,7 +190,7 @@ if not gdf_comuna.empty:
     centroid = gdf_comuna.geometry.centroid.iloc[0]
     zoom_start = get_zoom_level(area)  # Dynamic zoom level based on area
     m = folium.Map(location=[centroid.y, centroid.x], zoom_start=zoom_start)
-    st.write(area*1000)
+    # st.write(area*1000)
     folium.GeoJson(gdf_comuna, name='geojson').add_to(m)
     folium.LayerControl().add_to(m)
     folium_static(m)
@@ -202,7 +200,6 @@ area_comuna=gdf_comuna.Superf_KM2
 densidad_pop=pop_total_comuna/area_comuna
 formatted_area_comuna=locale.format_string("%d", int(area_comuna), grouping=True)
 formatted_densidad_pop=locale.format_string("%.2f", densidad_pop, grouping=True)
-# Assuming area_comuna and densidad_pop variables are defined somewhere in your code
 cols = st.columns(5)
 cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{formatted_area_comuna} km²")
 cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{formatted_densidad_pop} hab/km²")
