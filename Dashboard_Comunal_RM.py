@@ -195,6 +195,7 @@ else:
 area_comuna=gdf_comuna.Superf_KM2
 pop_comuna = ine17_comuna['Poblacion 2024'].sum()
 densidad_pop=pop_comuna/area_comuna
+
 cols = st.columns(2)
 cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{int(area_comuna)} km²")
 cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{int(densidad_pop)} hab/km²")
