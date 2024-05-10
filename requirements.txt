@@ -7,3 +7,4 @@ matplotlib
 folium
 streamlit-folium
 plotly-express
+locale
