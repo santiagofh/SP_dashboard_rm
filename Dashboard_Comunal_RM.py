@@ -18,8 +18,6 @@ import locale
 #%%
 # Setting o configuración
 
-locale.setlocale(locale.LC_ALL, 'es_ES')
-
 #%% 
 # Path o rutas para archivos
 path_censo17 = 'data_clean/CENSO17_Poblacion_rm.csv'
