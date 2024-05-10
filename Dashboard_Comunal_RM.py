@@ -193,15 +193,11 @@ if not gdf_comuna.empty:
 else:
     st.write("No se encontró la comuna seleccionada en los datos geográficos.")
 area_comuna=gdf_comuna.Superf_KM2
-densidad_pop=pop_total_comuna/area_comuna
-formatted_area_comuna = f"{int(area_comuna):,}"
-formatted_densidad_pop = f"{densidad_pop:,.2f}"
-formatted_area_comuna = formatted_area_comuna.replace(',', '.')
-formatted_densidad_pop = formatted_densidad_pop.replace(',', 'X').replace('.', ',').replace('X', '.')
-
-cols = st.columns(5)
-cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{formatted_area_comuna} km²")
-cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{formatted_densidad_pop} hab/km²")
+pop_comuna = ine17_comuna['Poblacion 2024'].sum()
+densidad_pop=pop_comuna/area_comuna
+cols = st.columns(2)
+cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{int(area_comuna)} km²")
+cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{int(densidad_pop)} hab/km²")
 
 
 st.write('_Fuente: Elaboración propia a partir de datos geograficos nacionales (https://www.ine.gob.cl/herramientas/portal-de-mapas/geodatos-abiertos)_')
