@@ -14,9 +14,6 @@ from datetime import datetime
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-import locale
-#%%
-# Setting o configuración
 
 #%% 
 # Path o rutas para archivos
@@ -132,18 +129,20 @@ fig = px.pie(gender_population, values='Percentage', names='Sexo (1=Hombre 2=Muj
              title="Distribución de Género 2024")
 
 
-# Format numbers with thousand separators
-formatted_pop_censada = locale.format_string("%d", int(pop_censada), grouping=True)
-formatted_pop_h = locale.format_string("%d", int(pop_h), grouping=True)
-formatted_pop_m = locale.format_string("%d", int(pop_m), grouping=True)
-formatted_pop_urb = "{:.2f}%".format(pop_urb_percentage)
-formatted_pop_rur = "{:.2f}%".format(pop_rur_percentage)
-formatted_pop_total_comuna = locale.format_string("%d", int(pop_total_comuna), grouping=True)
-formatted_pop_proy_h = locale.format_string("%d", int(pop_proy_h), grouping=True)
-formatted_pop_proy_m = locale.format_string("%d", int(pop_proy_m), grouping=True)
-contenido = st.empty()
-# Display in Streamlit
-
+formatted_pop_censada = f"{int(pop_censada):,}"
+formatted_pop_h = f"{int(pop_h):,}"
+formatted_pop_m = f"{int(pop_m):,}"
+formatted_pop_urb = f"{pop_urb_percentage:.2f}%"
+formatted_pop_rur = f"{pop_rur_percentage:.2f}%"
+formatted_pop_total_comuna = f"{int(pop_total_comuna):,}"
+formatted_pop_proy_h = f"{int(pop_proy_h):,}"
+formatted_pop_proy_m = f"{int(pop_proy_m):,}"
+formatted_pop_censada = formatted_pop_censada.replace(',', '.')
+formatted_pop_h = formatted_pop_h.replace(',', '.')
+formatted_pop_m = formatted_pop_m.replace(',', '.')
+formatted_pop_total_comuna = formatted_pop_total_comuna.replace(',', '.')
+formatted_pop_proy_h = formatted_pop_proy_h.replace(',', '.')
+formatted_pop_proy_m = formatted_pop_proy_m.replace(',', '.')
 
 st.markdown('# Indicadores Censo 2017 y proyecciones')
 cols = st.columns(5)
@@ -195,8 +194,11 @@ else:
     st.write("No se encontró la comuna seleccionada en los datos geográficos.")
 area_comuna=gdf_comuna.Superf_KM2
 densidad_pop=pop_total_comuna/area_comuna
-formatted_area_comuna=locale.format_string("%d", int(area_comuna), grouping=True)
-formatted_densidad_pop=locale.format_string("%.2f", densidad_pop, grouping=True)
+formatted_area_comuna = f"{int(area_comuna):,}"
+formatted_densidad_pop = f"{densidad_pop:,.2f}"
+formatted_area_comuna = formatted_area_comuna.replace(',', '.')
+formatted_densidad_pop = formatted_densidad_pop.replace(',', 'X').replace('.', ',').replace('X', '.')
+
 cols = st.columns(5)
 cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{formatted_area_comuna} km²")
 cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{formatted_densidad_pop} hab/km²")
