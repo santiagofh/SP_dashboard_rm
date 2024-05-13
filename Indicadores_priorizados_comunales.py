@@ -29,6 +29,7 @@ path_casen22_participacion_lab='data_clean/casen22_participacion_laboral.csv'
 path_casen22_migrantes='data_clean/casen22_migrantes.csv'
 path_casen22_etnias='data_clean/casen22_etnias.csv'
 path_casen22_prevision='data_clean/casen22_prevision.csv'
+path_def='data_clean/Defunciones_2022_2024.csv'
 #%% 
 # LECTURA DE ARCHIVOS
 
@@ -41,6 +42,7 @@ casen22_participacion_lab = pd.read_csv(path_casen22_participacion_lab)
 casen22_migrantes = pd.read_csv(path_casen22_migrantes)
 casen22_etnias = pd.read_csv(path_casen22_etnias)
 casen22_prevision = pd.read_csv(path_casen22_prevision)
+defunciones=pd.read_csv(path_def)
 #%%
 # Listado comunas
 
@@ -518,3 +520,62 @@ cols[2].metric("ISAPRE", f"{prevision_data.iloc[0]['isapre']:.2f}%")
 cols[3].metric("Ninguno (Particular)", f"{prevision_data.iloc[0]['ninguno (particular)']:.2f}%")
 cols[4].metric("Otro Sistema", f"{prevision_data.iloc[0]['otro sistema']:.2f}%")
 cols[5].metric("No Sabe", f"{prevision_data.iloc[0]['no sabe']:.2f}%")
+#%%
+
+
+defunciones['fecha_def'] = pd.to_datetime(defunciones['fecha_def'])
+anio_actual = datetime.now().year
+lista_anios = sorted(defunciones['fecha_def'].dt.year.unique(), reverse=True)
+anio_seleccionado = st.selectbox("Seleccione el año:", lista_anios, index=lista_anios.index(anio_actual) if anio_actual in lista_anios else 0)
+columna_poblacion = f'Poblacion {anio_seleccionado}'
+poblacion_total = ine17_comuna[columna_poblacion].sum()
+st.write(f"### Defunciones en {comuna_seleccionada} para el año {anio_seleccionado}")
+st.write(f"Población total estimada en {comuna_seleccionada} para el año {anio_seleccionado}: {poblacion_total:,}")
+
+#%%
+defunciones_comuna = defunciones[(defunciones['comuna'] == comuna_seleccionada) & (defunciones['fecha_def'].dt.year == anio_seleccionado)]
+top_causas_def = defunciones_comuna['casusa_def'].value_counts().nlargest(10)
+fig = px.bar(top_causas_def, x=top_causas_def.index, y=top_causas_def.values, labels={'y': 'Número de Defunciones', 'index': 'Causa de Defunción'}, title=f"Top 10 Causas de Defunción en {comuna_seleccionada} para el año {anio_seleccionado}")
+st.plotly_chart(fig)
+# %%
+total_defunciones = defunciones_comuna.shape[0]
+porcentaje_defunciones = (total_defunciones / poblacion_total) * 100
+porcentaje_poblacion_viva = 100 - porcentaje_defunciones
+data_pie = {
+    'Categoría': ['Defunciones', 'Población Viva'],
+    'Porcentaje': [porcentaje_defunciones, porcentaje_poblacion_viva]
+}
+#%%
+# Seleccionar los últimos tres años disponibles en los datos
+ultimos_tres_anios = sorted(defunciones['fecha_def'].dt.year.unique(), reverse=True)[:3]
+
+# Crear un DataFrame para almacenar los resultados
+resultados = []
+
+for anio in ultimos_tres_anios:
+    # Filtrar las defunciones y la población para el año específico
+    defunciones_anio = defunciones[(defunciones['comuna'] == comuna_seleccionada) & (defunciones['fecha_def'].dt.year == anio)]
+    poblacion_anio = ine17_comuna[f'Poblacion {anio}'].sum()
+    
+    # Calcular el número total de defunciones y el porcentaje respecto a la población
+    total_defunciones_anio = defunciones_anio.shape[0]
+    porcentaje_defunciones = (total_defunciones_anio / poblacion_anio) * 100
+    
+    # Agregar los resultados al DataFrame
+    resultados.append({
+        'Año': anio,
+        'Porcentaje de Defunciones': porcentaje_defunciones,
+        'Población Total': poblacion_anio 
+    })
+df_resultados = pd.DataFrame(resultados)
+
+fig_bar = px.bar(
+    df_resultados, 
+    x='Año', 
+    y='Porcentaje de Defunciones', 
+    title=f'Porcentaje de Defunciones en {comuna_seleccionada} para los últimos tres años',
+    labels={'Porcentaje de Defunciones': '% de Defunciones'},
+    hover_data=['Población Total'] 
+)
+
+st.plotly_chart(fig_bar)
