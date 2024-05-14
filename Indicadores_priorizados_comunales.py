@@ -61,8 +61,11 @@ comunas = lista_comunas
 default_index = comunas.index("Santiago") if "Santiago" in comunas else 0
 comuna_seleccionada = st.sidebar.selectbox("Comuna:", comunas, index=default_index)
 
-# Continuar añadiendo más enlaces según necesites
-
+# Sidebar 2
+st.sidebar.header("Selección año de proyección de población del INE")
+current_year = datetime.now().year
+select_year_int = st.sidebar.slider("Año:", min_value=2002, max_value=2035, value=current_year)
+select_year = f'Poblacion {select_year_int}'
 #%%
 # TITULO INTRODUCCION
 
@@ -94,9 +97,9 @@ censo17_comuna=censo17.loc[censo17['NOMBRE COMUNA']==str.upper(comuna_selecciona
 
 #%% 
 # Calculo de pop y densidad
-pop_total_comuna=ine17_comuna['Poblacion 2024'].sum()
+pop_proy_total=ine17_comuna[select_year].sum()
 area_comuna=1
-densidad_pop=pop_total_comuna/area_comuna
+densidad_pop=pop_proy_total/area_comuna
 
 # %%
 # 
@@ -112,15 +115,18 @@ censo17_comuna_edad = censo17_comuna.loc[censo17_comuna.EDAD != 'Total Comuna']
 pop_censada = censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA']
 pop_h = censo17_comuna_pop['HOMBRES ']
 pop_m = censo17_comuna_pop['MUJERES']
+pop_h_percentaje = (pop_h / pop_censada * 100).iloc[0]
+pop_m_percentaje = (pop_m / pop_censada * 100).iloc[0]
 pop_urb_percentage = (censo17_comuna_pop['TOTAL ÁREA URBANA'] / censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA'] * 100).iloc[0]
 pop_rur_percentage = (censo17_comuna_pop['TOTAL ÁREA RURAL'] / censo17_comuna_pop['TOTAL POBLACIÓN EFECTIVAMENTE CENSADA'] * 100).iloc[0]
 
 
 # Projected data for 2024
-pop_total_comuna = ine17_comuna['Poblacion 2024'].sum()
-pop_proy_h = ine17_comuna.loc[ine17_comuna['Sexo (1=Hombre 2=Mujer)'] == 1, 'Poblacion 2023'].sum()
-pop_proy_m = ine17_comuna.loc[ine17_comuna['Sexo (1=Hombre 2=Mujer)'] == 2, 'Poblacion 2023'].sum()
-
+pop_proy_total = ine17_comuna[select_year].sum()
+pop_proy_h = ine17_comuna.loc[ine17_comuna['Sexo (1=Hombre 2=Mujer)'] == 1, select_year].sum()
+pop_proy_m = ine17_comuna.loc[ine17_comuna['Sexo (1=Hombre 2=Mujer)'] == 2, select_year].sum()
+pop_proy_h_percentaje=pop_proy_h/pop_proy_total*100
+pop_proy_m_percentaje=pop_proy_m/pop_proy_total*100
 # Current year gender distribution
 pop_current_year = ine17_comuna[['Sexo (1=Hombre 2=Mujer)', year_column]].dropna()
 gender_population = pop_current_year.groupby('Sexo (1=Hombre 2=Mujer)')[year_column].sum().reset_index()
@@ -131,20 +137,36 @@ fig = px.pie(gender_population, values='Percentage', names='Sexo (1=Hombre 2=Muj
              title="Distribución de Género 2024")
 
 
-formatted_pop_censada = f"{int(pop_censada):,}"
-formatted_pop_h = f"{int(pop_h):,}"
-formatted_pop_m = f"{int(pop_m):,}"
-formatted_pop_urb = f"{pop_urb_percentage:.2f}%"
-formatted_pop_rur = f"{pop_rur_percentage:.2f}%"
-formatted_pop_total_comuna = f"{int(pop_total_comuna):,}"
-formatted_pop_proy_h = f"{int(pop_proy_h):,}"
-formatted_pop_proy_m = f"{int(pop_proy_m):,}"
-formatted_pop_censada = formatted_pop_censada.replace(',', '.')
-formatted_pop_h = formatted_pop_h.replace(',', '.')
-formatted_pop_m = formatted_pop_m.replace(',', '.')
-formatted_pop_total_comuna = formatted_pop_total_comuna.replace(',', '.')
-formatted_pop_proy_h = formatted_pop_proy_h.replace(',', '.')
-formatted_pop_proy_m = formatted_pop_proy_m.replace(',', '.')
+# Utilizando comprensión de lista y función map para aplicar el formateo y reemplazo en una sola línea si es necesario.
+formatted_values = {
+    "pop_censada": f"{int(pop_censada):,}".replace(',', '.'),
+    "pop_h": f"{int(pop_h):,}".replace(',', '.'),
+    "pop_m": f"{int(pop_m):,}".replace(',', '.'),
+    "pop_h_percentaje": "{:.2f}%".format(pop_h_percentaje),
+    "pop_m_percentaje": "{:.2f}%".format(pop_m_percentaje),
+    "pop_urb_percentage": f"{pop_urb_percentage:.2f}%",
+    "pop_rur_percentage": f"{pop_rur_percentage:.2f}%",
+    "pop_proy_total": f"{int(pop_proy_total):,}".replace(',', '.'),
+    "pop_proy_h": f"{int(pop_proy_h):,}".replace(',', '.'),
+    "pop_proy_m": f"{int(pop_proy_m):,}".replace(',', '.'),
+    'pop_proy_h_percentaje':"{:.2f}%".format(pop_proy_h_percentaje),
+    'pop_proy_m_percentaje':"{:.2f}%".format(pop_proy_m_percentaje),
+}
+
+# Ahora puedes acceder a cada valor formateado desde el diccionario
+formatted_pop_censada = formatted_values["pop_censada"]
+formatted_pop_h = formatted_values["pop_h"]
+formatted_pop_m = formatted_values["pop_m"]
+formatted_pop_h_percentaje = formatted_values["pop_h_percentaje"]
+formatted_pop_m_percentaje = formatted_values["pop_m_percentaje"]
+formatted_pop_urb = formatted_values["pop_urb_percentage"]
+formatted_pop_rur = formatted_values["pop_rur_percentage"]
+formatted_pop_proy_total = formatted_values["pop_proy_total"]
+formatted_pop_proy_h = formatted_values["pop_proy_h"]
+formatted_pop_proy_m = formatted_values["pop_proy_m"]
+formatted_pop_proy_h_percent = formatted_values["pop_proy_h_percentaje"]
+formatted_pop_proy_m_percent = formatted_values["pop_proy_m_percentaje"]
+
 
 st.markdown('# Indicadores Censo 2017 y proyecciones')
 cols = st.columns(5)
@@ -152,17 +174,15 @@ cols = st.columns(5)
 cols[0].metric("Población efectivamente censada 2017", formatted_pop_censada)
 cols[1].metric("Total hombres (censo 2017)", formatted_pop_h)
 cols[2].metric("Total mujeres (censo 2017)", formatted_pop_m)
-cols[3].metric("Porcentaje área urbana (censo 2017)", formatted_pop_urb)
-cols[4].metric("Porcentaje área rural (censo 2017)", formatted_pop_rur)
+cols[3].metric("Porcentaje de hombres (censo2017)", formatted_pop_h_percentaje)
+cols[4].metric("Porcentaje de mujeres (censo2017)", formatted_pop_m_percentaje)
 
-cols[0].metric("Población proyectada de la comuna 2024", formatted_pop_total_comuna)
-cols[1].metric("Total hombres (población proyectada 2024)", formatted_pop_proy_h)
-cols[2].metric("Total mujeres (población proyectada 2024)", formatted_pop_proy_m)
 
-cols[3].metric(label="Porcentaje de hombres (proyectado para 2024)", 
-            value=gender_population.loc[gender_population['Sexo (1=Hombre 2=Mujer)'] == 1, 'Formatted_Percentage'].iloc[0])
-cols[4].metric(label="Porcentaje de mujeres (proyectado para 2024)", 
-            value=gender_population.loc[gender_population['Sexo (1=Hombre 2=Mujer)'] == 2, 'Formatted_Percentage'].iloc[0])
+cols[0].metric(f"Población proyectada de la comuna ({select_year})", formatted_pop_proy_total)
+cols[1].metric(f"Total hombres ({select_year})", formatted_pop_proy_h)
+cols[2].metric(f"Total mujeres ({select_year})", formatted_pop_proy_m)
+cols[3].metric(f"Porcentaje de hombres ({select_year})",formatted_pop_proy_h_percent)
+cols[4].metric(f"Porcentaje de mujeres ({select_year})",formatted_pop_proy_m_percent)
 
 
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
@@ -195,13 +215,14 @@ if not gdf_comuna.empty:
 else:
     st.write("No se encontró la comuna seleccionada en los datos geográficos.")
 area_comuna=gdf_comuna.Superf_KM2
-pop_comuna = ine17_comuna['Poblacion 2024'].sum()
+pop_comuna = ine17_comuna[select_year].sum()
 densidad_pop=pop_comuna/area_comuna
 
-cols = st.columns(2)
+cols = st.columns(4)
 cols[0].metric("Área total de la comuna (población proyectada 2024)", f"{int(area_comuna)} km²")
 cols[1].metric("Densidad poblacional de la comuna (población proyectada)", f"{int(densidad_pop)} hab/km²")
-
+cols[0].metric("Porcentaje área urbana (censo 2017)", formatted_pop_urb)
+cols[1].metric("Porcentaje área rural (censo 2017)", formatted_pop_rur)
 
 st.write('_Fuente: Elaboración propia a partir de datos geograficos nacionales (https://www.ine.gob.cl/herramientas/portal-de-mapas/geodatos-abiertos)_')
 #%%
@@ -222,16 +243,16 @@ fig = px.line(
     labels={'Sexo (1=Hombre 2=Mujer)': 'Sexo', 'Año': 'Año', 'Población': 'Población'}
 )
 current_year = datetime.now().year
-fig.add_vline(x=current_year, line_width=2, line_dash="dash", line_color="red")
+fig.add_vline(x=select_year_int, line_width=2, line_dash="dash", line_color="red")
 
 fig.add_annotation(
-    x=current_year, 
+    x=select_year_int, 
     # y=0.95,  # ajusta esta ubicación según la escala de tu gráfico
     xref="x",
     yref="paper",
-    text=f"Año actual: {current_year}",
+    text=f"Año: {select_year_int}",
     showarrow=False,
-    font=dict(color="red", size=14)
+    font=dict(color="red", size=15)
 )
 
 
@@ -246,6 +267,9 @@ st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
 # %%
 st.write(f'## Piramide poblacional para {comuna_seleccionada}')
+
+
+
 ine17_comuna['Sexo'] = ine17_comuna['Sexo (1=Hombre 2=Mujer)'].map({1: 'Hombres', 2: 'Mujeres'})
 years = [f'Poblacion {year}' for year in range(2002, 2036)]
 data_melted = ine17_comuna.melt(id_vars=['Edad', 'Sexo'], value_vars=years, var_name='Year', value_name='Population')
@@ -283,9 +307,9 @@ def age_group(age):
     elif age >= 10:
         return "10 a 14"
     elif age >= 5:
-        return "5 a 9"
+        return "05 a 09"
     else:
-        return "0 a 4"
+        return "0 a 04"
 grouped_data['Age Group'] = grouped_data['Edad'].apply(age_group)
 grouped_data = grouped_data.groupby(['Year', 'Sexo', 'Age Group']).agg({'Population': 'sum'}).reset_index()
 fig = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=['Hombres', 'Mujeres'],
@@ -299,7 +323,6 @@ for year in range(2002, 2036):
                    orientation='h', name=sexo, visible=(year == datetime.now().year)),
             1, 1 if sexo == 'Hombres' else 2
         )
-current_year = datetime.now().year
 steps = []
 for i, year in enumerate(range(2002, 2036)):
     step = dict(
@@ -310,21 +333,29 @@ for i, year in enumerate(range(2002, 2036)):
     for j in range(len(fig.data)):
         step["args"][0]["visible"][2 * i + j % 2] = True
     steps.append(step)
-current_year_index = current_year - 2002
+year_index = select_year_int - 2002
 
 sliders = [dict(
-    active=current_year_index,
+    active=year_index,
     currentvalue={"prefix": "Año: "},
     pad={"t": 50},
     steps=steps
 )]
+
+max_population = grouped_data['Population'].max()
+
+# Debemos asegurarnos de usar este máximo para ambos lados del eje X
 fig.update_layout(
     sliders=sliders,
     title=f"Pirámide Poblacional de {comuna_seleccionada} por Año",
     xaxis_title="Población",
     yaxis_title="Rango Etario",
-    showlegend=False
+    showlegend=False,
+    xaxis=dict(range=[-max_population, 0]),  # Ajusta el rango para ser simétrico
+    xaxis2=dict(range=[0, max_population])  # Asegúrate de hacer esto para ambos ejes X si estás usando subplots
 )
+
+
 st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
@@ -504,10 +535,21 @@ prevision_data = casen22_prevision[casen22_prevision['Comuna'] == comuna_selecci
 prevision_melted = prevision_data.melt(id_vars=['Comuna'], value_vars=['fonasa', 'ff.aa. y del orden', 'isapre', 'ninguno (particular)', 'otro sistema', 'no sabe'],
                                       var_name='Tipo de Previsión', value_name='Porcentaje')
 
+color_map = {
+    'fonasa': '0068c9',
+    'isapre': '83c9ff',
+    'ff.aa. y del orden': '29b09d',
+    'otro sistema': '7defa1',
+    'no sabe': 'ffabab',
+    'ninguno (particular)': 'ff2b2b',
+}
+
 # Crear gráfico de torta para visualizar la afiliación a sistemas de previsión
 fig = px.pie(prevision_melted, names='Tipo de Previsión', values='Porcentaje', 
              title=f"Distribución de Afiliación a Sistemas de Previsión en {comuna_seleccionada}",
-             labels={'Porcentaje':'% del Total'})
+             labels={'Porcentaje':'% del Total'},
+             color='Tipo de Previsión',
+             color_discrete_map=color_map)  # Aplicar el mapa de colores
 
 # Mostrar gráfico
 st.plotly_chart(fig)
@@ -521,8 +563,7 @@ cols[3].metric("Ninguno (Particular)", f"{prevision_data.iloc[0]['ninguno (parti
 cols[4].metric("Otro Sistema", f"{prevision_data.iloc[0]['otro sistema']:.2f}%")
 cols[5].metric("No Sabe", f"{prevision_data.iloc[0]['no sabe']:.2f}%")
 #%%
-
-
+#%%
 defunciones['fecha_def'] = pd.to_datetime(defunciones['fecha_def'])
 anio_actual = datetime.now().year
 lista_anios = sorted(defunciones['fecha_def'].dt.year.unique(), reverse=True)
@@ -530,13 +571,16 @@ anio_seleccionado = st.selectbox("Seleccione el año:", lista_anios, index=lista
 columna_poblacion = f'Poblacion {anio_seleccionado}'
 poblacion_total = ine17_comuna[columna_poblacion].sum()
 st.write(f"### Defunciones en {comuna_seleccionada} para el año {anio_seleccionado}")
-st.write(f"Población total estimada en {comuna_seleccionada} para el año {anio_seleccionado}: {poblacion_total:,}")
+poblacion_total_formatted=int(poblacion_total)
+st.write(f"Población total estimada en {comuna_seleccionada} para el año {anio_seleccionado}: {poblacion_total_formatted}")
 
 #%%
 defunciones_comuna = defunciones[(defunciones['comuna'] == comuna_seleccionada) & (defunciones['fecha_def'].dt.year == anio_seleccionado)]
-top_causas_def = defunciones_comuna['casusa_def'].value_counts().nlargest(10)
-fig = px.bar(top_causas_def, x=top_causas_def.index, y=top_causas_def.values, labels={'y': 'Número de Defunciones', 'index': 'Causa de Defunción'}, title=f"Top 10 Causas de Defunción en {comuna_seleccionada} para el año {anio_seleccionado}")
-st.plotly_chart(fig)
+defunciones_comuna.rename(columns={'casusa_def': 'Causas de defunciones'}, inplace=True)
+top_causas_def = defunciones_comuna['Causas de defunciones'].value_counts()
+# Cambio aquí para mostrar una tabla en lugar de un gráfico
+# st.table(top_causas_def.reset_index().rename(columns={'casusa_def': 'Causa de Defunciones'}))
+st.dataframe(top_causas_def, height=300)
 # %%
 total_defunciones = defunciones_comuna.shape[0]
 porcentaje_defunciones = (total_defunciones / poblacion_total) * 100
@@ -546,27 +590,25 @@ data_pie = {
     'Porcentaje': [porcentaje_defunciones, porcentaje_poblacion_viva]
 }
 #%%
-# Seleccionar los últimos tres años disponibles en los datos
+import pandas as pd
+import plotly.express as px
+import streamlit as st
+
+# Suponemos que 'defunciones' y 'ine17_comuna' son tus DataFrames ya cargados y listos para usar
 ultimos_tres_anios = sorted(defunciones['fecha_def'].dt.year.unique(), reverse=True)[:3]
 
-# Crear un DataFrame para almacenar los resultados
 resultados = []
-
 for anio in ultimos_tres_anios:
-    # Filtrar las defunciones y la población para el año específico
     defunciones_anio = defunciones[(defunciones['comuna'] == comuna_seleccionada) & (defunciones['fecha_def'].dt.year == anio)]
     poblacion_anio = ine17_comuna[f'Poblacion {anio}'].sum()
-    
-    # Calcular el número total de defunciones y el porcentaje respecto a la población
     total_defunciones_anio = defunciones_anio.shape[0]
     porcentaje_defunciones = (total_defunciones_anio / poblacion_anio) * 100
-    
-    # Agregar los resultados al DataFrame
     resultados.append({
-        'Año': anio,
+        'Año': str(anio),  # Convertir año a cadena para asegurar que Plotly lo trate como categórico
         'Porcentaje de Defunciones': porcentaje_defunciones,
-        'Población Total': poblacion_anio 
+        'Población Total': poblacion_anio
     })
+
 df_resultados = pd.DataFrame(resultados)
 
 fig_bar = px.bar(
@@ -575,7 +617,9 @@ fig_bar = px.bar(
     y='Porcentaje de Defunciones', 
     title=f'Porcentaje de Defunciones en {comuna_seleccionada} para los últimos tres años',
     labels={'Porcentaje de Defunciones': '% de Defunciones'},
-    hover_data=['Población Total'] 
+    hover_data=['Población Total'],
+    category_orders={"Año": [str(y) for y in sorted(ultimos_tres_anios, reverse=False)]}  # Asegura el orden correcto y tratamiento categórico
 )
 
+fig_bar.update_xaxes(type='category')  # Esto hace que el eje X sea tratado como categórico
 st.plotly_chart(fig_bar)
