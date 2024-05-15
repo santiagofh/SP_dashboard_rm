@@ -56,6 +56,11 @@ st.set_page_config(page_title="Análisis de Comunas en Región Metropolitana", l
 
 #%%
 # Sidebar 1
+logo_url = "img/LOGO-MINSAL100-ANOS_color-original-1.png"
+
+st.sidebar.image(logo_url, use_column_width=True)
+
+
 st.sidebar.header("Selección de Comuna")
 comunas = lista_comunas
 default_index = comunas.index("Santiago") if "Santiago" in comunas else 0
@@ -72,8 +77,7 @@ select_year = f'Poblacion {select_year_int}'
 st.markdown('# Región Metropolitana y sus comunas: Indicadores priorizados')
 # col1, col2 = st.columns([1, 3])
 # with col1:
-logo_url = "https://upload.wikimedia.org/wikipedia/commons/6/6e/SEREMISALUDMET.png"
-st.image(logo_url, width=200) 
+
 # with col2:
 st.write("""
     ### Bienvenido al Tablero Interactivo de Comunas
@@ -360,7 +364,7 @@ st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
 # #%%
-st.write("## Indicadores Socioeconómicos: Pobreza")
+st.write("## Indicadores Socioeconómicos")
 st.write(f"### Pobreza Multidimensional en {comuna_seleccionada}")
 casen22_pobreza_m_comuna = casen22_pobreza_m[casen22_pobreza_m['Comuna'] == comuna_seleccionada]
 
@@ -375,10 +379,6 @@ percentage_not_poor = (casen22_pobreza_m_comuna.iloc[0]['No pobres'] / total_pop
 formatted_percentage_poor = "{:,.2f}%".format(percentage_poor)
 formatted_percentage_not_poor = "{:,.2f}%".format(percentage_not_poor)
 
-# Mostrar métricas
-cols = st.columns(2)
-cols[0].metric('Pobres', formatted_percentage_poor)
-cols[1].metric('No pobres', formatted_percentage_not_poor)
 
 # Preparar datos para el gráfico de tarta
 pie_data = {
@@ -392,12 +392,17 @@ fig = px.pie(df_pie, values='Values', names='Category',
              title=f"Distribución de Pobreza Multidimensional en {comuna_seleccionada}")
 st.plotly_chart(fig)
 
+# Mostrar métricas
+cols = st.columns(2)
+cols[0].metric('Pobres', formatted_percentage_poor)
+cols[1].metric('No pobres', formatted_percentage_not_poor)
+
 #%%
 import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.write(f"### Pobreza Multidimensional en {comuna_seleccionada}")
+st.write(f"### Ingresos en {comuna_seleccionada}")
 
 # Supongamos que 'casen22_ingresos_comuna' es tu DataFrame con los datos de ingresos
 # Filtrar datos por la comuna seleccionada
@@ -468,7 +473,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.write(f"### Información sobre Migrantes en {comuna_seleccionada}")
+st.write(f"### Migrantes en {comuna_seleccionada}")
 
 # Suponemos que 'casen22_migrantes' es tu DataFrame con los datos sobre migrantes
 # Filtrar datos por la comuna seleccionada
@@ -497,7 +502,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.write(f"### Información sobre Pertenencia Étnica en {comuna_seleccionada}")
+st.write(f"### Pertenencia Étnica en {comuna_seleccionada}")
 
 # Suponemos que 'casen22_etnias' es tu DataFrame con los datos sobre etnias
 # Filtrar datos por la comuna seleccionada
@@ -525,7 +530,7 @@ import pandas as pd
 import plotly.express as px
 import streamlit as st
 
-st.write(f"### Información sobre Afiliación a Sistemas de Previsión en {comuna_seleccionada}")
+st.write(f"### Afiliación a Sistemas de Previsión en {comuna_seleccionada}")
 
 # Suponemos que 'casen22_prevision' es tu DataFrame con los datos sobre afiliación a sistemas de previsión
 # Filtrar datos por la comuna seleccionada
