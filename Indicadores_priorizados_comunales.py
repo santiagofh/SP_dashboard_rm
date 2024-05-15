@@ -172,7 +172,7 @@ formatted_pop_proy_h_percent = formatted_values["pop_proy_h_percentaje"]
 formatted_pop_proy_m_percent = formatted_values["pop_proy_m_percentaje"]
 
 
-st.markdown('# Indicadores Censo 2017 y proyecciones')
+st.markdown('## Indicadores territoriales y de población')
 cols = st.columns(5)
 
 cols[0].metric("Población efectivamente censada 2017", formatted_pop_censada)
@@ -569,13 +569,17 @@ cols[4].metric("Otro Sistema", f"{prevision_data.iloc[0]['otro sistema']:.2f}%")
 cols[5].metric("No Sabe", f"{prevision_data.iloc[0]['no sabe']:.2f}%")
 #%%
 #%%
+st.write(f"## Indicadores de defunciones")
+
 defunciones['fecha_def'] = pd.to_datetime(defunciones['fecha_def'])
 anio_actual = datetime.now().year
 lista_anios = sorted(defunciones['fecha_def'].dt.year.unique(), reverse=True)
 anio_seleccionado = st.selectbox("Seleccione el año:", lista_anios, index=lista_anios.index(anio_actual) if anio_actual in lista_anios else 0)
 columna_poblacion = f'Poblacion {anio_seleccionado}'
 poblacion_total = ine17_comuna[columna_poblacion].sum()
+
 st.write(f"### Defunciones en {comuna_seleccionada} para el año {anio_seleccionado}")
+
 poblacion_total_formatted=int(poblacion_total)
 st.write(f"Población total estimada en {comuna_seleccionada} para el año {anio_seleccionado}: {poblacion_total_formatted}")
 
