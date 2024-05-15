@@ -1,4 +1,3 @@
-#%%
 import streamlit as st
 import pandas as pd
 import plotly.express as px
@@ -10,7 +9,6 @@ import json
 from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
-#%%
 # Path o rutas para archivos
 paths = {
     "censo17": 'data_clean/CENSO17_Poblacion_rm.csv',
@@ -26,7 +24,6 @@ paths = {
     "casen": 'data_clean/casen_17_22.json'
 }
 
-#%%
 # LECTURA DE ARCHIVOS
 ine17 = pd.read_csv(paths["ine_proy"])
 censo17 = pd.read_csv(paths["censo17"])
@@ -36,15 +33,12 @@ with open(paths["casen"], 'r') as json_file:
     json_data_dict = json.load(json_file)
 casen_dict = {sheet: pd.DataFrame(data) for sheet, data in json_data_dict.items()}
 
-#%%
 # Listado comunas
 lista_comunas = sorted(ine17['Nombre Comuna'].unique())
 
-#%%
 # INICIO DE LA PAGINA
 st.set_page_config(page_title="Análisis de Comunas en Región Metropolitana", layout='wide', initial_sidebar_state='expanded')
 
-#%%
 # Sidebar
 logo_url = "img/LOGO-MINSAL100-ANOS_color-original-1.png"
 st.sidebar.image(logo_url, use_column_width=True)
@@ -61,19 +55,11 @@ select_year = f'Poblacion {select_year_int}'
 
 # Enlaces en el panel lateral
 st.sidebar.markdown("## Enlaces rápidos")
-sections = {
-    "Indicadores de población": "indicadores-poblacion",
-    "Visualizar mapa de la comuna": "visualizar-mapa-comuna",
-    "Poblacion proyectada": "poblacion-proyectada",
-    "Piramide poblacional": "piramide-poblacional",
-    "Indicadores Socioeconomicos": "indicadores-socioeconomicos",
-    "Indicadores de defunciones": "indicadores-defunciones"
-}
+sections = ["Indicadores territoriales y de población", "Visualizar mapa de la comuna", "Poblacion proyectada",
+            "Piramide poblacional", "Indicadores Socioeconómicos", "Indicadores de defunciones"]
+for section in sections:
+    st.sidebar.markdown(f"[{section}](#{section.lower().replace(' ', '-')})")
 
-for section, link in sections.items():
-    st.sidebar.markdown(f"[{section}](#{link})")
-
-#%%
 # TITULO INTRODUCCION
 st.markdown('# Región Metropolitana y sus comunas: Indicadores priorizados')
 st.write("""
@@ -126,6 +112,7 @@ formatted_values = {
     "pop_m_percentaje": "{:.2f}%".format(pop_m_percentaje).replace('.', ','),
     "pop_urb_percentage": f"{pop_urb_percentage:.2f}%".replace('.', ','),
     "pop_rur_percentage": f"{pop_rur_percentage:.2f}%".replace('.', ','),
+
     "pop_proy_total": f"{int(pop_proy_total):,}".replace(',', '.'),
     "pop_proy_h": f"{int(pop_proy_h):,}".replace(',', '.'),
     "pop_proy_m": f"{int(pop_proy_m):,}".replace(',', '.'),
@@ -133,9 +120,8 @@ formatted_values = {
     'pop_proy_m_percentaje': "{:.2f}%".format(pop_proy_m_percentaje).replace('.', ',')
 }
 
-# Indicadores territoriales y de poblacion
-st.markdown('<a name="indicadores-poblacion"></a>', unsafe_allow_html=True)
-st.markdown('## Indicadores de población')
+# Indicadores territoriales y de población
+st.markdown('## Indicadores territoriales y de población')
 cols = st.columns(5)
 
 cols[0].metric("Población efectivamente censada 2017", formatted_values["pop_censada"])
@@ -153,10 +139,7 @@ cols[4].metric(f"Porcentaje de mujeres ({select_year})", formatted_values["pop_p
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
 
-#%%
-st.markdown('<a name="visualizar-mapa-comuna"></a>', unsafe_allow_html=True)
-st.write(f"## Visualizar mapa de la comuna {comuna_seleccionada}")
-
+# Visualizar mapa de la comuna
 def get_zoom_level(area):
     scaled_area = area * 1000 
     if scaled_area > 50:
@@ -170,7 +153,7 @@ def get_zoom_level(area):
     else:
         return 13
 
-st.write("## Visualizar mapa de la comuna")
+st.write(f"## Visualizar mapa de la comuna {comuna_seleccionada}")
 
 if not gdf_comuna.empty:
     area = gdf_comuna.geometry.area.iloc[0]
@@ -194,10 +177,8 @@ cols[1].metric("Porcentaje área rural (censo 2017)", formatted_values["pop_rur_
 
 st.write('_Fuente: Elaboración propia a partir de datos geográficos nacionales (https://www.ine.gob.cl/herramientas/portal-de-mapas/geodatos-abiertos)_')
 
-#%%
-st.markdown('<a name="poblacion-proyectada"></a>', unsafe_allow_html=True)
+# Poblacion proyectada
 st.write('## Poblacion proyectada')
-
 population_data = ine17_comuna[['Nombre Comuna', 'Sexo (1=Hombre 2=Mujer)'] + [f'Poblacion {year}' for year in range(2002, 2036)]]
 population_data_melted = population_data.melt(id_vars=['Nombre Comuna', 'Sexo (1=Hombre 2=Mujer)'], var_name='Año', value_name='Población')
 population_data_melted['Año'] = population_data_melted['Año'].str.extract('(\d+)').astype(int)
@@ -230,8 +211,7 @@ st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
 
-#%%
-st.markdown('<a name="piramide-poblacional"></a>', unsafe_allow_html=True)
+# Piramide poblacional
 st.write(f'## Piramide poblacional para {comuna_seleccionada}')
 
 ine17_comuna['Sexo'] = ine17_comuna['Sexo (1=Hombre 2=Mujer)'].map({1: 'Hombres', 2: 'Mujeres'})
@@ -326,7 +306,7 @@ st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
 
-st.markdown('<a name="indicadores-socioeconomicos"></a>', unsafe_allow_html=True)
+# Indicadores Socioeconómicos
 st.write("## Indicadores Socioeconómicos")
 
 # Pobreza de ingresos
@@ -346,7 +326,7 @@ fig.update_layout(
     yaxis_tickformat=",.2%"
 )
 st.plotly_chart(fig)
-#%%
+
 # Pobreza multidimensional
 st.write(f"### Pobreza multidimensional para {comuna_seleccionada}")
 casen_pobrezam = casen_dict['POBREZA MULTIDIMENSIONAL']
@@ -363,9 +343,7 @@ fig.update_layout(
     yaxis_tickformat=",.2%"
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
 
-#%%
 # Ingresos
 st.write(f"### Ingresos en {comuna_seleccionada}")
 casen_ingresos = casen_dict['INGRESOS']
@@ -390,8 +368,7 @@ fig.update_layout(
     yaxis_tickformat=".0f"
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
-#%%
+
 # Participación laboral
 st.write(f"### Participación laboral en {comuna_seleccionada}")
 casen_tasas_participacion = casen_dict['TASAS PARTICIPACIÓN LABORAL']
@@ -419,8 +396,7 @@ fig.update_layout(
     yaxis_title='Porcentaje de Participación'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
-#%%
+
 # Migrantes
 st.write(f"### Migrantes en {comuna_seleccionada}")
 casen_migrantes = casen_dict['MIGRANTES']
@@ -460,8 +436,7 @@ fig.update_layout(
     yaxis_title='Porcentaje de la Población'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
-#%%
+
 # Pertenencia Étnica
 st.write(f"### Pertenencia Étnica en {comuna_seleccionada}")
 casen_etnias = casen_dict['ETNIAS']
@@ -487,8 +462,7 @@ fig.update_layout(
     yaxis_title='Porcentaje de la Población'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
-#%%
+
 # Afiliación a Sistemas de Previsión
 st.write(f"### Afiliación a Sistemas de Previsión en {comuna_seleccionada}")
 column_rename_map = {
@@ -548,11 +522,8 @@ fig.update_layout(
     yaxis_title='Porcentaje de la Población'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
 
-#%%
-# Indicadores de defuncione
-st.markdown('<a name="indicadores-defunciones"></a>', unsafe_allow_html=True)
+# Indicadores de defunciones
 st.write("## Indicadores de defunciones")
 defunciones['fecha_def'] = pd.to_datetime(defunciones['fecha_def'])
 anio_actual = datetime.now().year
@@ -602,4 +573,3 @@ fig_bar = px.bar(
 )
 fig_bar.update_xaxes(type='category')
 st.plotly_chart(fig_bar)
-#%%
