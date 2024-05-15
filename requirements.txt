@@ -6,3 +6,5 @@ geopandas
 matplotlib
 folium
 streamlit-folium
+json
+statsmodels

@@ -14,7 +14,8 @@ from datetime import datetime
 import pandas as pd
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
-
+import json
+import statsmodels.api as sm
 #%% 
 # Path o rutas para archivos
 path_censo17 = 'data_clean/CENSO17_Poblacion_rm.csv'
@@ -30,6 +31,7 @@ path_casen22_migrantes='data_clean/casen22_migrantes.csv'
 path_casen22_etnias='data_clean/casen22_etnias.csv'
 path_casen22_prevision='data_clean/casen22_prevision.csv'
 path_def='data_clean/Defunciones_2022_2024.csv'
+path_casen='data_clean/casen_17_22.json'
 #%% 
 # LECTURA DE ARCHIVOS
 
@@ -42,6 +44,12 @@ casen22_participacion_lab = pd.read_csv(path_casen22_participacion_lab)
 casen22_migrantes = pd.read_csv(path_casen22_migrantes)
 casen22_etnias = pd.read_csv(path_casen22_etnias)
 casen22_prevision = pd.read_csv(path_casen22_prevision)
+with open(path_casen, 'r') as json_file:
+    json_data_dict = json.load(json_file)
+casen_dict = {sheet: pd.DataFrame(data) for sheet, data in json_data_dict.items()}
+for sheet_name, df in casen_dict.items():
+    print(f"{sheet_name}")
+
 defunciones=pd.read_csv(path_def)
 #%%
 # Listado comunas
@@ -363,210 +371,280 @@ fig.update_layout(
 st.plotly_chart(fig)
 st.write('_Fuente: Elaboración propia a partir de INE 2017_')
 st.write('_https://www.ine.gob.cl/estadisticas/sociales/demografia-y-vitales/proyecciones-de-poblacion_')
-# #%%
+#%%
 st.write("## Indicadores Socioeconómicos")
-st.write(f"### Pobreza Multidimensional en {comuna_seleccionada}")
-casen22_pobreza_m_comuna = casen22_pobreza_m[casen22_pobreza_m['Comuna'] == comuna_seleccionada]
-
-# Calcular el total de la población
-total_population = casen22_pobreza_m_comuna.iloc[0]['Pobres'] + casen22_pobreza_m_comuna.iloc[0]['No pobres']
-
-# Calcular porcentajes
-percentage_poor = (casen22_pobreza_m_comuna.iloc[0]['Pobres'] / total_population) * 100
-percentage_not_poor = (casen22_pobreza_m_comuna.iloc[0]['No pobres'] / total_population) * 100
-
-# Formatear los porcentajes con coma y dos decimales
-formatted_percentage_poor = "{:,.2f}%".format(percentage_poor)
-formatted_percentage_not_poor = "{:,.2f}%".format(percentage_not_poor)
-
-
-# Preparar datos para el gráfico de tarta
-pie_data = {
-    'Category': ['Pobres', 'No pobres'],
-    'Values': [percentage_poor, percentage_not_poor]
-}
-df_pie = pd.DataFrame(pie_data)
-
-# Visualización del gráfico de tarta
-fig = px.pie(df_pie, values='Values', names='Category',
-             title=f"Distribución de Pobreza Multidimensional en {comuna_seleccionada}")
+#%%
+st.write(f"### Pobreza de ingresos para {comuna_seleccionada}")
+casen_pobrezai = casen_dict['POBREZA DE INGRESOS']
+casen_pobrezai_comuna = casen_pobrezai[casen_pobrezai['Comuna'] == comuna_seleccionada]
+casen_pobrezai_comuna['Pobres'].fillna(casen_pobrezai_comuna['Pobres 2020'], inplace=True)
+casen_pobrezai_comuna['Pobres'] = casen_pobrezai_comuna['Pobres'] / 100
+fig = px.bar(
+    casen_pobrezai_comuna,
+    x='Año',
+    y='Pobres',
+    title=f"Pobreza de ingresos en {comuna_seleccionada}",
+    labels={'Pobres': 'Porcentaje de Pobreza de Ingresos', 'Año': 'Año'}
+)
+fig.update_layout(
+    yaxis_tickformat=",.2%"
+)
 st.plotly_chart(fig)
-
-# Mostrar métricas
-cols = st.columns(2)
-cols[0].metric('Pobres', formatted_percentage_poor)
-cols[1].metric('No pobres', formatted_percentage_not_poor)
+#%%
+st.write(f"### Pobreza multidimencional para {comuna_seleccionada}")
+casen_pobrezam = casen_dict['POBREZA MULTIDIMENSIONAL']
+casen_pobrezam_comuna = casen_pobrezam[casen_pobrezam['Comuna'] == comuna_seleccionada]
+casen_pobrezam_comuna['Pobres'] = casen_pobrezam_comuna['Pobres'] / 100
+fig = px.bar(
+    casen_pobrezam_comuna,
+    x='Año',
+    y='Pobres',
+    title=f"Pobreza de ingresos en {comuna_seleccionada}",
+    labels={'Pobres': 'Porcentaje de Pobreza Multidimensional', 'Año': 'Año'}
+)
+fig.update_layout(
+    yaxis_tickformat=",.2%"
+)
+st.plotly_chart(fig)
 
 #%%
-import pandas as pd
-import plotly.express as px
-import streamlit as st
-
 st.write(f"### Ingresos en {comuna_seleccionada}")
+casen_ingresos = casen_dict['INGRESOS']
+casen_ingresos_comuna = casen_ingresos[casen_ingresos['Comuna'] == comuna_seleccionada]
+casen_ingresos_comuna_long = pd.melt(
+    casen_ingresos_comuna,
+    id_vars=['Año'],
+    value_vars=['Ingreso Autónomo', 'Ingreso Monetario', 'Ingresos del trabajo', 'Ingreso Total'],
+    var_name='Tipo de Ingreso',
+    value_name='Monto'
+)
+fig = px.bar(
+    casen_ingresos_comuna_long,
+    x='Año',
+    y='Monto',
+    color='Tipo de Ingreso',
+    barmode='group',
+    title=f"Distribución de Ingresos en {comuna_seleccionada}",
+    labels={'Monto': 'Monto de Ingreso', 'Año': 'Año'}
+)
 
-# Supongamos que 'casen22_ingresos_comuna' es tu DataFrame con los datos de ingresos
-# Filtrar datos por la comuna seleccionada
-casen22_ingresos_comuna = casen22_ingresos[casen22_ingresos['Comuna'] == comuna_seleccionada]
-
-# Formatear los valores de ingreso
-casen22_ingresos_comuna['Ingresos del trabajo'] = casen22_ingresos_comuna['Ingresos del trabajo'].apply(lambda x: f"${x:,.0f}")
-casen22_ingresos_comuna['Ingreso Autónomo'] = casen22_ingresos_comuna['Ingreso Autónomo'].apply(lambda x: f"${x:,.0f}")
-casen22_ingresos_comuna['Ingreso Monetario'] = casen22_ingresos_comuna['Ingreso Monetario'].apply(lambda x: f"${x:,.0f}")
-casen22_ingresos_comuna['Ingreso Total'] = casen22_ingresos_comuna['Ingreso Total'].apply(lambda x: f"${x:,.0f}")
-
-# Crear una columna para categorías y una para valores en formato string
-ingresos_melted = casen22_ingresos_comuna.melt(id_vars=['Comuna'], value_vars=['Ingresos del trabajo', 'Ingreso Autónomo', 'Ingreso Monetario', 'Ingreso Total'],
-                                     var_name='Tipo de Ingreso', value_name='Valor')
-
-# Crear gráfico de barras
-fig = px.bar(ingresos_melted, x='Tipo de Ingreso', y='Valor', text='Valor',
-             title=f"Ingresos en {comuna_seleccionada}", color='Tipo de Ingreso')
-
-# Mostrar gráfico
+fig.update_layout(
+    yaxis_tickformat=".0f"
+)
 st.plotly_chart(fig)
-
-# Si deseas también puedes usar los datos para mostrar en métricas simples, ejemplo:
-cols = st.columns(4)
-cols[0].metric("Ingresos del trabajo", casen22_ingresos_comuna.iloc[0]['Ingresos del trabajo'])
-cols[1].metric("Ingreso Autónomo", casen22_ingresos_comuna.iloc[0]['Ingreso Autónomo'])
-cols[2].metric("Ingreso Monetario", casen22_ingresos_comuna.iloc[0]['Ingreso Monetario'])
-cols[3].metric("Ingreso Total", casen22_ingresos_comuna.iloc[0]['Ingreso Total'])
-
 # %%
-import pandas as pd
-import plotly.express as px
-import streamlit as st
-
-import pandas as pd
-import plotly.express as px
-import streamlit as st
-
 st.write(f"### Participación laboral en {comuna_seleccionada}")
 
-# Supongamos que 'casen22_participacion_lab' es tu DataFrame con los datos de participación laboral
-# Filtrar datos por la comuna seleccionada
-participacion_data = casen22_participacion_lab[casen22_participacion_lab['Comuna'] == comuna_seleccionada]
+casen_tasas_participacion = casen_dict['TASAS PARTICIPACIÓN LABORAL']
+casen_tasas_participacion_comuna = casen_tasas_participacion[casen_tasas_participacion['Comuna'] == comuna_seleccionada]
+casen_tasas_participacion_comuna['Hombres']=casen_tasas_participacion_comuna['Hombres']/100
+casen_tasas_participacion_comuna['Mujeres']=casen_tasas_participacion_comuna['Mujeres']/100
+# Crear un DataFrame en formato largo para el gráfico
+casen_tasas_participacion_comuna_long = pd.melt(
+    casen_tasas_participacion_comuna,
+    id_vars=['Año'],
+    value_vars=['Hombres', 'Mujeres'],
+    var_name='Sexo',
+    value_name='Porcentaje'
+)
 
-# Crear una columna para categorías y una para valores
-participacion_melted = participacion_data.melt(id_vars=['Comuna'], value_vars=['Hombres', 'Mujeres', 'Total'],
-                                     var_name='Grupo', value_name='Participación')
+# Crear el gráfico
+fig = px.bar(
+    casen_tasas_participacion_comuna_long,
+    x='Año',
+    y='Porcentaje',
+    color='Sexo',
+    barmode='group',
+    title=f"Tasas de participación laboral en {comuna_seleccionada}",
+    labels={'Porcentaje': 'Porcentaje de Participación', 'Año': 'Año'}
+)
 
-# Formatear los valores de participación como porcentajes con dos decimales y añadir el símbolo de porcentaje
-participacion_melted['Participación'] = participacion_melted['Participación'].apply(lambda x: f"{x:.2f}%")
+# Formatear las etiquetas del eje y como porcentajes
+fig.update_layout(
+    yaxis_tickformat=".2%",  # Formato de porcentaje con dos decimales
+    yaxis_title='Porcentaje de Participación'
+)
 
-# Crear gráfico de barras para visualizar la participación
-fig = px.bar(participacion_melted, x='Grupo', y='Participación', text='Participación',
-             title=f"Participación Laboral en {comuna_seleccionada}", color='Grupo')
-
-# Mostrar gráfico
+# Mostrar el gráfico en Streamlit
 st.plotly_chart(fig)
 
-# Mostrar métricas utilizando los datos originales antes de la transformación y aplicando el formato
-cols = st.columns(3)
-cols[0].metric("Hombres", f"{participacion_data.iloc[0]['Hombres']:.2f}%")
-cols[1].metric("Mujeres", f"{participacion_data.iloc[0]['Mujeres']:.2f}%")
-cols[2].metric("Total", f"{participacion_data.iloc[0]['Total']:.2f}%")
-
 #%%
+st.write(f'### Migrantes en {comuna_seleccionada}')
+casen_migrantes = casen_dict['MIGRANTES']
+casen_migrantes_comuna = casen_migrantes[casen_migrantes['Comuna'] == comuna_seleccionada]
+casen_migrantes_comuna['Población nacida en Chile']=casen_migrantes_comuna['Ponlación nacida en Chile']/100
+casen_migrantes_comuna['Población nacida fuera de Chile']=casen_migrantes_comuna['Población nacida fuera de Chile']/100
+casen_migrantes_comuna['No sabe']=casen_migrantes_comuna['No sabe']/100
 
-import pandas as pd
-import plotly.express as px
-import streamlit as st
+# Crear un DataFrame en formato largo para el gráfico
+casen_migrantes_comuna_long = pd.melt(
+    casen_migrantes_comuna,
+    id_vars=['Año'],
+    value_vars=['Población nacida en Chile', 'Población nacida fuera de Chile', 'No sabe'],
+    var_name='Tipo de Población',
+    value_name='Porcentaje'
+)
 
-st.write(f"### Migrantes en {comuna_seleccionada}")
+# Crear el gráfico de barras
+fig_bar = px.bar(
+    casen_migrantes_comuna_long,
+    x='Año',
+    y='Porcentaje',
+    color='Tipo de Población',
+    barmode='group',
+    title=f"Distribución de la Población Migrante en {comuna_seleccionada}",
+    labels={'Porcentaje': 'Porcentaje de la Población', 'Año': 'Año'}
+)
 
-# Suponemos que 'casen22_migrantes' es tu DataFrame con los datos sobre migrantes
-# Filtrar datos por la comuna seleccionada
-migrantes_data = casen22_migrantes[casen22_migrantes['Comuna'] == comuna_seleccionada]
+# Crear el gráfico de dispersión con línea de tendencia
+fig_trend = px.scatter(
+    casen_migrantes_comuna_long[casen_migrantes_comuna_long['Tipo de Población'] == 'Población nacida fuera de Chile'],
+    x='Año',
+    y='Porcentaje',
+    trendline="ols",
+    labels={'Porcentaje': 'Porcentaje de la Población', 'Año': 'Año'}
+)
 
-# Crear una columna para categorías y una para valores
-migrantes_melted = migrantes_data.melt(id_vars=['Comuna'], value_vars=['Ponlación nacida en Chile', 'Población nacida fuera de Chile', 'No sabe'],
-                                      var_name='Categoría', value_name='Porcentaje')
+# Combinar los gráficos
+fig_trend.data[1].marker.color = 'red'
+fig_trend.data[1].name = 'Tendencia de Migrantes'
+fig_trend.data[0].showlegend = False
+fig = fig_bar.add_traces(fig_trend.data[1:])
 
-# Crear gráfico de torta para visualizar los datos de migrantes
-fig = px.pie(migrantes_melted, names='Categoría', values='Porcentaje', 
-             title=f"Distribución de la Población por Origen en {comuna_seleccionada}",
-             labels={'Porcentaje':'% del Total'})
+# Formatear las etiquetas del eje y
+fig.update_layout(
+    yaxis_tickformat=".2%",  # Formato de porcentaje con dos decimales
+    yaxis_title='Porcentaje de la Población'
+)
 
-# Mostrar gráfico
+# Mostrar el gráfico en Streamlit
 st.plotly_chart(fig)
 
-# Opcional: Mostrar métricas utilizando los datos originales antes de la transformación y aplicando el formato
-cols = st.columns(3)
-cols[0].metric("Población nacida en Chile", f"{migrantes_data.iloc[0]['Ponlación nacida en Chile']:.2f}%")
-cols[1].metric("Población nacida fuera de Chile", f"{migrantes_data.iloc[0]['Población nacida fuera de Chile']:.2f}%")
-cols[2].metric("No sabe", f"{migrantes_data.iloc[0]['No sabe']:.2f}%")
+
+
 
 #%%
-import pandas as pd
-import plotly.express as px
-import streamlit as st
 
 st.write(f"### Pertenencia Étnica en {comuna_seleccionada}")
 
-# Suponemos que 'casen22_etnias' es tu DataFrame con los datos sobre etnias
-# Filtrar datos por la comuna seleccionada
-etnias_data = casen22_etnias[casen22_etnias['Comuna'] == comuna_seleccionada]
+casen_etnias = casen_dict['ETNIAS']
+casen_etnias_comuna = casen_etnias[casen_etnias['Comuna'] == comuna_seleccionada]
 
-# Crear una columna para categorías y una para valores
-etnias_melted = etnias_data.melt(id_vars=['Comuna'], value_vars=['Pertenece a algún pueblo originario', 'No pertenece a ningún pueblo originario'],
-                                var_name='Categoría', value_name='Porcentaje')
+# Crear un DataFrame en formato largo para el gráfico
+casen_etnias_comuna_long = pd.melt(
+    casen_etnias_comuna,
+    id_vars=['Año'],
+    value_vars=['Pertenece a algún pueblo originario', 'No pertenece a ningún pueblo originario'],
+    var_name='Tipo de Población',
+    value_name='Porcentaje'
+)
 
-# Crear gráfico de torta para visualizar los datos étnicos
-fig = px.pie(etnias_melted, names='Categoría', values='Porcentaje', 
-             title=f"Distribución Étnica en {comuna_seleccionada}",
-             labels={'Porcentaje':'% del Total'})
+# Crear el gráfico
+fig = px.bar(
+    casen_etnias_comuna_long,
+    x='Año',
+    y='Porcentaje',
+    color='Tipo de Población',
+    barmode='group',
+    title=f"Distribución de la población por pertenencia a pueblo originario en {comuna_seleccionada}",
+    labels={'Porcentaje': 'Porcentaje de la Población', 'Año': 'Año'}
+)
 
-# Mostrar gráfico
+# Formatear las etiquetas del eje y como porcentajes
+fig.update_layout(
+    yaxis_tickformat=".2%",  # Formato de porcentaje con dos decimales
+    yaxis_title='Porcentaje de la Población'
+)
+
+# Mostrar el gráfico en Streamlit
 st.plotly_chart(fig)
 
-# Opcional: Mostrar métricas utilizando los datos originales antes de la transformación y aplicando el formato
-cols = st.columns(2)
-cols[0].metric("Pertenece a algún pueblo originario", f"{etnias_data.iloc[0]['Pertenece a algún pueblo originario']:.2f}%")
-cols[1].metric("No pertenece a ningún pueblo originario", f"{etnias_data.iloc[0]['No pertenece a ningún pueblo originario']:.2f}%")
+# Mostrar los datos
+st.write(casen_etnias_comuna)
 
 #%%
-import pandas as pd
-import plotly.express as px
-import streamlit as st
 
 st.write(f"### Afiliación a Sistemas de Previsión en {comuna_seleccionada}")
 
-# Suponemos que 'casen22_prevision' es tu DataFrame con los datos sobre afiliación a sistemas de previsión
-# Filtrar datos por la comuna seleccionada
-prevision_data = casen22_prevision[casen22_prevision['Comuna'] == comuna_seleccionada]
-
-# Crear una columna para categorías y una para valores
-prevision_melted = prevision_data.melt(id_vars=['Comuna'], value_vars=['fonasa', 'ff.aa. y del orden', 'isapre', 'ninguno (particular)', 'otro sistema', 'no sabe'],
-                                      var_name='Tipo de Previsión', value_name='Porcentaje')
-
-color_map = {
-    'fonasa': '0068c9',
-    'isapre': '83c9ff',
-    'ff.aa. y del orden': '29b09d',
-    'otro sistema': '7defa1',
-    'no sabe': 'ffabab',
-    'ninguno (particular)': 'ff2b2b',
+# Map of column renaming
+column_rename_map = {
+    'fonasa': 'FONASA',
+    'ff.aa. y del orden': 'FF.AA. y del Orden',
+    'isapre': 'Isapre',
+    'ninguno (particular)': 'Ninguno (Particular)',
+    'otro sistema': 'Otro Sistema',
+    'no sabe': 'No Sabe'
 }
 
-# Crear gráfico de torta para visualizar la afiliación a sistemas de previsión
-fig = px.pie(prevision_melted, names='Tipo de Previsión', values='Porcentaje', 
-             title=f"Distribución de Afiliación a Sistemas de Previsión en {comuna_seleccionada}",
-             labels={'Porcentaje':'% del Total'},
-             color='Tipo de Previsión',
-             color_discrete_map=color_map)  # Aplicar el mapa de colores
+# Color map for different types of health insurance
+color_map = {
+    'FONASA': '#0068c9',
+    'Isapre': '#83c9ff',
+    'FF.AA. y del Orden': '#29b09d',
+    'Otro Sistema': '#7defa1',
+    'No Sabe': '#ffabab',
+    'Ninguno (Particular)': '#ff2b2b'
+}
 
-# Mostrar gráfico
+# Filtrar los datos de la pestaña "PREVISIÓN DE SALUD" para la comuna seleccionada
+casen_prevision_salud = casen_dict['PREVISIÓN DE SALUD']
+casen_prevision_salud_comuna = casen_prevision_salud[casen_prevision_salud['Comuna'] == comuna_seleccionada]
+
+# Renombrar las columnas
+casen_prevision_salud_comuna = casen_prevision_salud_comuna.rename(columns=column_rename_map)
+
+# Dividir los valores por 100 para obtener porcentajes
+for col in column_rename_map.values():
+    if col in casen_prevision_salud_comuna.columns:
+        casen_prevision_salud_comuna[col] = casen_prevision_salud_comuna[col] / 100
+
+# Crear un DataFrame en formato largo para el gráfico
+casen_prevision_salud_comuna_long = pd.melt(
+    casen_prevision_salud_comuna,
+    id_vars=['Año'],
+    value_vars=list(column_rename_map.values()),
+    var_name='Tipo de Previsión',
+    value_name='Porcentaje'
+)
+
+# Crear el gráfico de barras
+fig_bar = px.bar(
+    casen_prevision_salud_comuna_long,
+    x='Año',
+    y='Porcentaje',
+    color='Tipo de Previsión',
+    barmode='group',
+    title=f"Distribución de Previsión de Salud en {comuna_seleccionada}",
+    labels={'Porcentaje': 'Porcentaje de la Población', 'Año': 'Año'},
+    color_discrete_map=color_map
+)
+
+# Crear el gráfico de dispersión con línea de tendencia para FONASA
+fig_trend = px.scatter(
+    casen_prevision_salud_comuna,
+    x='Año',
+    y='FONASA',
+    trendline="ols",
+    labels={'FONASA': 'Porcentaje de la Población', 'Año': 'Año'}
+)
+
+# Combinar los gráficos
+fig_trend.data[1].marker.color = 'red'
+fig_trend.data[1].name = 'Tendencia FONASA'
+fig_trend.data[0].showlegend = False
+fig = fig_bar.add_traces(fig_trend.data[1:])
+
+# Formatear las etiquetas del eje y como porcentajes
+fig.update_layout(
+    yaxis_tickformat=".2%",  # Formato de porcentaje con dos decimales
+    yaxis_title='Porcentaje de la Población'
+)
+
+# Mostrar el gráfico en Streamlit
 st.plotly_chart(fig)
 
-# Opcional: Mostrar métricas utilizando los datos originales antes de la transformación y aplicando el formato
-cols = st.columns(6)
-cols[0].metric("FONASA", f"{prevision_data.iloc[0]['fonasa']:.2f}%")
-cols[1].metric("FF.AA. y del Orden", f"{prevision_data.iloc[0]['ff.aa. y del orden']:.2f}%")
-cols[2].metric("ISAPRE", f"{prevision_data.iloc[0]['isapre']:.2f}%")
-cols[3].metric("Ninguno (Particular)", f"{prevision_data.iloc[0]['ninguno (particular)']:.2f}%")
-cols[4].metric("Otro Sistema", f"{prevision_data.iloc[0]['otro sistema']:.2f}%")
-cols[5].metric("No Sabe", f"{prevision_data.iloc[0]['no sabe']:.2f}%")
+# Mostrar los datos
+st.write(casen_prevision_salud_comuna)
 #%%
 #%%
 st.write(f"## Indicadores de defunciones")
