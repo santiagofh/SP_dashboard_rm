@@ -16,12 +16,6 @@ paths = {
     "censo17": 'data_clean/CENSO17_Poblacion_rm.csv',
     "geo": 'data_clean/Comunas_RM.geojson',
     "ine_proy": 'data_clean/INE_Proyecciones_RM.csv',
-    "casen22_pobreza_m": 'data_clean/casen22_pobrezam.csv',
-    "casen22_ingresos": 'data_clean/casen22_ingresos.csv',
-    "casen22_participacion_lab": 'data_clean/casen22_participacion_laboral.csv',
-    "casen22_migrantes": 'data_clean/casen22_migrantes.csv',
-    "casen22_etnias": 'data_clean/casen22_etnias.csv',
-    "casen22_prevision": 'data_clean/casen22_prevision.csv',
     "defunciones": 'data_clean/Defunciones_2022_2024.csv',
     "casen": 'data_clean/casen_17_22.json'
 }
@@ -46,10 +40,13 @@ st.set_page_config(page_title="Análisis de Comunas en Región Metropolitana", l
 
 #%%
 # Sidebar
+
 logo_url = "img/LOGO-MINSAL100-ANOS_color-original-1.png"
 st.sidebar.image(logo_url, use_column_width=True)
-
-st.sidebar.header("Selección de Comuna")
+st.sidebar.write("# Seremi de salud Región Metropolitana")
+st.sidebar.write("Subdepto. Gestión de la información y Estadisticas")
+st.sidebar.write("## Tablero Interactivo de Comunas: Indicadores priorizados")
+st.sidebar.write("Selección de Comuna")
 comunas = lista_comunas
 default_index = comunas.index("Santiago") if "Santiago" in comunas else 0
 comuna_seleccionada = st.sidebar.selectbox("Comuna:", comunas, index=default_index)
@@ -67,7 +64,8 @@ sections = {
     "Poblacion proyectada": "poblacion-proyectada",
     "Piramide poblacional": "piramide-poblacional",
     "Indicadores Socioeconomicos": "indicadores-socioeconomicos",
-    "Indicadores de defunciones": "indicadores-defunciones"
+    "Indicadores de defunciones": "indicadores-defunciones",
+    "Descarga de archivos":"Descarga-de-archivos"
 }
 
 for section, link in sections.items():
@@ -346,6 +344,10 @@ fig.update_layout(
     yaxis_tickformat=",.2%"
 )
 st.plotly_chart(fig)
+
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
+
 #%%
 # Pobreza multidimensional
 st.write(f"### Pobreza multidimensional para {comuna_seleccionada}")
@@ -363,7 +365,8 @@ fig.update_layout(
     yaxis_tickformat=",.2%"
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022_')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
 
 #%%
 # Ingresos
@@ -390,7 +393,9 @@ fig.update_layout(
     yaxis_tickformat=".0f"
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022_')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
+
 #%%
 # Participación laboral
 st.write(f"### Participación laboral en {comuna_seleccionada}")
@@ -419,7 +424,9 @@ fig.update_layout(
     yaxis_title='Porcentaje de Participación'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022_')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
+
 #%%
 # Migrantes
 st.write(f"### Migrantes en {comuna_seleccionada}")
@@ -460,7 +467,9 @@ fig.update_layout(
     yaxis_title='Porcentaje de la Población'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022_')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
+
 #%%
 # Pertenencia Étnica
 st.write(f"### Pertenencia Étnica en {comuna_seleccionada}")
@@ -487,7 +496,9 @@ fig.update_layout(
     yaxis_title='Porcentaje de la Población'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022_')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
+
 #%%
 # Afiliación a Sistemas de Previsión
 st.write(f"### Afiliación a Sistemas de Previsión en {comuna_seleccionada}")
@@ -548,11 +559,14 @@ fig.update_layout(
     yaxis_title='Porcentaje de la Población'
 )
 st.plotly_chart(fig)
-st.write('_Fuente: Elaboración propia a partir de CASEN 2017, 2020 y 2022_')
+st.write('_Fuente: Elaboración propia a partir de encusta CASEN 2017, 2020 y 2022_')
+st.write('_https://observatorio.ministeriodesarrollosocial.gob.cl/encuesta-casen_')
+
 
 #%%
 # Indicadores de defuncione
 st.markdown('<a name="indicadores-defunciones"></a>', unsafe_allow_html=True)
+
 st.write("## Indicadores de defunciones")
 defunciones['fecha_def'] = pd.to_datetime(defunciones['fecha_def'])
 anio_actual = datetime.now().year
@@ -602,4 +616,29 @@ fig_bar = px.bar(
 )
 fig_bar.update_xaxes(type='category')
 st.plotly_chart(fig_bar)
+st.write('_Fuente: Elaboración propia a partir de Defunciones por Causa 2022 - 2024 CIFRAS PRELIMINARES_')
+st.write('_https://deis.minsal.cl/#datosabiertos_')
+
 #%%
+st.markdown('<a name="Descarga-de-archivos"></a>', unsafe_allow_html=True)
+st.write('# Descarga de archivos')
+
+# Definimos los datos de los enlaces en una lista de diccionarios
+links = [
+    {"Nombre": "Censo de Población y Vivienda", "Categoría": "CENSO", "URL": "https://www.ine.gob.cl/estadisticas/sociales/censos-de-poblacion-y-vivienda/censo-de-poblacion-y-vivienda"},
+    {"Nombre": "Pobreza Comunal (CASEN)", "Categoría": "CASEN", "URL": "https://observatorio.ministeriodesarrollosocial.gob.cl/pobreza-comunal"},
+    {"Nombre": "Defunciones por Causa", "Categoría": "Defunciones", "URL": "https://repositoriodeis.minsal.cl/DatosAbiertos/VITALES/DEFUNCIONES_FUENTE_DEIS_1990_2021_CIFRAS_OFICIALES.zip"}
+]
+
+# Convertimos la lista de diccionarios en un dataframe
+import pandas as pd
+df = pd.DataFrame(links)
+
+# Mostramos la tabla en Streamlit
+st.write('## Tabla de Enlaces de Descarga')
+st.table(df)
+
+# Opcional: Creamos enlaces clicables
+st.write('## Enlaces de Descarga Clicables')
+for link in links:
+    st.markdown(f"- [{link['Nombre']}]({link['URL']}) ({link['Categoría']})")
