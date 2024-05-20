@@ -41,7 +41,7 @@ st.set_page_config(page_title="Análisis de Comunas en Región Metropolitana", l
 #%%
 # Sidebar
 
-logo_url = "img/LOGO-MINSAL100-ANOS_color-original-1.png"
+logo_url = "img/seremi-100-años.png"
 st.sidebar.image(logo_url, use_column_width=True)
 st.sidebar.write("# Seremi de salud Región Metropolitana")
 st.sidebar.write("Subdepto. Gestión de la información y Estadisticas")
