@@ -7,3 +7,4 @@ matplotlib
 folium
 streamlit-folium
 statsmodels
+shapely
